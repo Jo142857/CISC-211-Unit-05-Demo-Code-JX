@@ -8,26 +8,14 @@
  
 /* define and initialize global variables that C can access */
 
-.global deposit,withdrawal,balance,eat_out,stay_in,eat_ice_cream,we_have_a_problem
-.type deposit,%gnu_unique_object
-.type withdrawal,%gnu_unique_object
-.type balance,%gnu_unique_object
-.type eat_out,%gnu_unique_object
-.type stay_in,%gnu_unique_object
-.type eat_ice_cream,%gnu_unique_object
-.type we_have_a_problem,%gnu_unique_object
+.global bagels,donuts,snacks
+.type bagels,%gnu_unique_object
+.type donuts,%gnu_unique_object
+.type snacks,%gnu_unique_object
 
-/* NOTE! These are only initialized ONCE, right before the program runs.
- * If you want these to be 0 every time asmFunc gets called, you must set
- * them to 0 at the start of your code!
- */
-deposit:           .word     0  /* input value set by the C code */
-withdrawal:        .word     0  /* input value set by the C code */
-balance:           .word     0  /* input value set by the C code */
-eat_out:           .word     0  /* set this to 0 at the start of your code! */
-stay_in:           .word     0  /* set this to 0 at the start of your code! */
-eat_ice_cream:     .word     0  /* set this to 0 at the start of your code! */
-we_have_a_problem: .word     0  /* set this to 0 at the start of your code! */
+bagels:  .word     0  /* input value set by the C code */
+donuts:  .word     0  /* input value set by the C code */
+snacks:  .word     0  /* output value calc'd by assembly code */
 
  /* Tell the assembler that what follows is in instruction memory    */
 .text
@@ -59,11 +47,16 @@ asmFunc:
     push {r4-r11,LR}
     
     /* Lets study these lines in class. */
-    LDR r0,=balance
+    LDR r4,=snacks
+    LDR r5,=0
+    STR r5,[r4]
+    LDR r0,=bagels
     LDR r1,[r0]
-    LDR r2,=deposit
-    STR r1,[r2]
-    ADDS r3,r1,r1
+    LDR r2,=donuts
+    LDR r3,[r2]
+    /* r4 still has the address of "snacks" in it */
+    ADDS r5,r1,r3
+    STR r5,[r4]
     
 
        

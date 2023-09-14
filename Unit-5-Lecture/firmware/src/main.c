@@ -38,6 +38,7 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include <string.h>
 #include <malloc.h>
+#include <inttypes.h>
 #include "definitions.h"                // SYS function prototypes
 
 /* RTC Time period match values for input clock of 1 KHz */
@@ -55,16 +56,11 @@ static uint8_t uartTxBuffer[MAX_PRINT_LEN] = {0};
 
 // Test cases for testing func that adds 3 nums and returns the results
 // AND sets bits in global variables.
-static int32_t depositArray[] = {  0x80000001, 0, 0x80000001,
+static int32_t bagelArray[] = {  0x80000001, 0, 0x80000001,
                                    5,5,6};
-static int32_t withdrawalArray[] = {  0x80000001, 0x80000001, 0,
+static int32_t donutArray[] = {  0x80000001, 0x80000001, 0,
                                       -2, -6, 5};
-static int32_t balanceArray[] = {  0, 0x80000001, 0x80000001,
-                                  -3, -9, 4};
-static int32_t problemArray[] = {1,1,1,0,0,0};
 
-static char * pass = "PASS";
-static char * fail = "FAIL";
 
 // VB COMMENT:
 // The ARM calling convention permits the use of up to 4 registers, r0-r3
@@ -78,14 +74,9 @@ static char * fail = "FAIL";
 extern int32_t asmFunc();
 
 
-extern int32_t deposit;
-extern int32_t withdrawal;
-extern int32_t balance;
-extern int32_t eat_out;
-extern int32_t stay_in;
-extern int32_t eat_ice_cream;
-extern int32_t we_have_a_problem;
-
+extern int32_t bagels;
+extern int32_t donuts;
+extern int32_t snacks;
 
 // set this to 0 if using the simulator. BUT note that the simulator
 // does NOT support the UART, so there's no way to print output.
@@ -108,95 +99,6 @@ static void usartDmaChannelHandler(DMAC_TRANSFER_EVENT event, uintptr_t contextH
 }
 #endif
 
-// return failure count. A return value of 0 means everything passed.
-static int testResult(int testNum, 
-                      int32_t newBalance, 
-                      int32_t *passCount,
-                      int32_t *failCount)
-{
-    // for this lab, each test case corresponds to a single pass or fail
-    // But for future labs, one test case may have multiple pass/fail criteria
-    // So I'm setting it up this way so it'll work for future labs, too --VB
-    *failCount = 0;
-    *passCount = 0;
-    char *s1 = "OOPS";
-    static char *s2 = "OOPS";
-    static bool firstTime = true;
-    int32_t correctAnswer = balanceArray[testNum] +
-                            depositArray[testNum] +
-                            withdrawalArray[testNum];
-    if (problemArray[testNum] == we_have_a_problem)
-    {
-        *passCount += 1;
-        s1 = pass;
-    }
-    else
-    {
-        s1 = fail;  // assign the failure string to s1
-        *failCount += 1;  // increment the failure count
-    }
-    if (problemArray[testNum] == 1)
-    {
-        if (balance == balanceArray[testNum])
-        {
-            
-        }
-    }
-    else
-    {
-        s1 = pass;  // assign the pass string to s1
-        *passCount += 1;  // increment the pass count
-    }
-    
-    /* only check the string the first time through */
-    if (firstTime == true)
-    {
-        /* Now check the string */
-        int strTest = strcmp((char *)nameStrPtr, 
-                             "Hello. My name is Inigo Montoya.");
-        if (strTest == 0) // Make sure it changed! 0 means strs are equal
-        {
-            s2 = fail;  // assign the failure string to s1
-            *failCount += 1;  // increment the failure count
-        }
-        else
-        {
-            s2 = pass;  // assign the pass string to s1
-            *passCount += 1;  // increment the pass count
-        }
-        firstTime = false; // don't check the strings for subsequent test cases
-    }
-           
-    // build the string to be sent out over the serial lines
-    snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
-            "========= Test Number: %d\r\n"
-            "test input 1:    %8ld\r\n"
-            "test input 2:    %8ld\r\n"
-            "expected result: %8ld\r\n"
-            "actual result:   %8ld\r\n"
-            "pass/fail:       %s\r\n\r\n"
-            "modified name string: %s\r\n"
-            "string test result:   %s\r\n"
-            "\r\n",
-            testNum,
-            testInp1,
-            testInp2,
-            correctAnswer,
-            asmResult,
-            s1,
-            (char *)nameStrPtr,
-            s2);
-
-#if USING_HW 
-    // send the string over the serial bus using the UART
-    DMAC_ChannelTransfer(DMAC_CHANNEL_0, uartTxBuffer, \
-        (const void *)&(SERCOM5_REGS->USART_INT.SERCOM_DATA), \
-        strlen((const char*)uartTxBuffer));
-#endif
-
-    return *failCount;
-    
-}
 
 
 
@@ -223,14 +125,8 @@ int main ( void )
 #endif //SIMULATOR
 
     // initialize all the variables
-    int32_t inp1 = 0;
-    int32_t inp2 = 0;
     int32_t result = 0;
-    int32_t passCount = 0;
-    int32_t failCount = 0;
-    int32_t totalPassCount = 0;
-    int32_t totalFailCount = 0;
-    uint32_t numTestCases = sizeof(inp1Array)/sizeof(inp1Array[0]);
+    uint32_t numTestCases = sizeof(bagelArray)/sizeof(bagelArray[0]);
     
     // Loop forever
     while ( true )
@@ -246,20 +142,45 @@ int main ( void )
             isUSARTTxComplete = false;
             
             // set the input globals to the test values
-            balance = balanceArray[testCase];
-            deposit = depositArray[testCase];
-            withdrawal = withdrawalArray[testCase];
+            bagels = bagelArray[testCase];
+            donuts = donutArray[testCase];
+
+            snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
+                    "========= Test Number: %d\r\n"
+                    "Inputs:\r\n"
+                    "bagels: %d stored at address 0x%" PRIXPTR "\r\n"
+                    "donuts: %d stored at address 0x%" PRIXPTR "\r\n",
+                    (int)testCase, 
+                    (int)bagels, 
+                    (uintptr_t)(&bagels), 
+                    (int)donuts, 
+                    (uintptr_t)(&donuts)); 
+
+#if USING_HW 
+            DMAC_ChannelTransfer(DMAC_CHANNEL_0, uartTxBuffer, \
+                (const void *)&(SERCOM5_REGS->USART_INT.SERCOM_DATA), \
+                strlen((const char*)uartTxBuffer));
+            // spin here, waiting for timer and UART to complete
+            while (isUSARTTxComplete == false); // wait for print to finish
+            /* reset it for the next print */
+            isUSARTTxComplete = false;
+#endif
 
             // !!!! THIS IS WHERE YOUR ASSEMBLY LANGUAGE PROGRAM GETS CALLED!!!!
             // Call our assembly function defined in file asmFunc.s
-            newBalance = asmFunc();
+            result = asmFunc();
             
             // test the result and see if it passed
-            failCount = testResult(testCase,newBalance,
-                                   &passCount,&failCount);
-            totalPassCount = totalPassCount + passCount;
-            totalFailCount = totalFailCount + failCount;
+            // failCount = testResult(testCase,newBalance,
+            //                        &passCount,&failCount);
+            snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
+                    "snacks = %ld\r\n",
+                    result); 
+            DMAC_ChannelTransfer(DMAC_CHANNEL_0, uartTxBuffer, \
+                (const void *)&(SERCOM5_REGS->USART_INT.SERCOM_DATA), \
+                strlen((const char*)uartTxBuffer));
 
+            
 #if USING_HW
             // spin here until the UART has completed transmission
             // and the timer has expired
@@ -275,7 +196,6 @@ int main ( void )
         // We do this in case there are very few tests and they don't have the
         // terminal hooked up in time.
         uint32_t idleCount = 1;
-        uint32_t totalTests = totalPassCount + totalFailCount;
         bool firstTime = true;
         while(true)      // post-test forever loop
         {
@@ -283,9 +203,8 @@ int main ( void )
             isUSARTTxComplete = false;
             snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
                     "========= Post-test Idle Cycle Number: %ld\r\n"
-                    "Summary of tests: %ld of %ld tests passed\r\n"
-                    "\r\n",
-                    idleCount, totalPassCount, totalTests); 
+                    "snacks = %ld\r\n",
+                    idleCount, result); 
 
 #if USING_HW 
             DMAC_ChannelTransfer(DMAC_CHANNEL_0, uartTxBuffer, \
