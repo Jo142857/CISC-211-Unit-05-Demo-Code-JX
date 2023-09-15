@@ -56,10 +56,8 @@ static uint8_t uartTxBuffer[MAX_PRINT_LEN] = {0};
 
 // Test cases for testing func that adds 3 nums and returns the results
 // AND sets bits in global variables.
-static int32_t bagelArray[] = {  0x80000001, 0, 0x80000001,
-                                   5,5,6};
-static int32_t donutArray[] = {  0x80000001, 0x80000001, 0,
-                                      -2, -6, 5};
+static int32_t bagelArray[] = {  7,  8,  9};
+static int32_t donutArray[] = {  4, 10, 12};
 
 
 // VB COMMENT:
@@ -144,6 +142,7 @@ int main ( void )
             // set the input globals to the test values
             bagels = bagelArray[testCase];
             donuts = donutArray[testCase];
+            snacks = 0;
 
             snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
                     "========= Test Number: %d\r\n"
@@ -176,12 +175,12 @@ int main ( void )
             snprintf((char*)uartTxBuffer, MAX_PRINT_LEN,
                     "snacks = %ld\r\n",
                     result); 
+            
+#if USING_HW
             DMAC_ChannelTransfer(DMAC_CHANNEL_0, uartTxBuffer, \
                 (const void *)&(SERCOM5_REGS->USART_INT.SERCOM_DATA), \
                 strlen((const char*)uartTxBuffer));
 
-            
-#if USING_HW
             // spin here until the UART has completed transmission
             // and the timer has expired
             //while  (false == isUSARTTxComplete ); 

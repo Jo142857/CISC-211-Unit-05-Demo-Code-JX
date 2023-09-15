@@ -46,15 +46,18 @@ asmFunc:
     /* save the caller's registers, as required by the ARM calling convention */
     push {r4-r11,LR}
     
-    /* Lets study these lines in class. */
+    /* Store 0 in mem location snacks. */
     LDR r4,=snacks
     LDR r5,=0
     STR r5,[r4]
+    
+    /* load values of bagels and donuts from mem into registers */
     LDR r0,=bagels
     LDR r1,[r0]
     LDR r2,=donuts
     LDR r3,[r2]
-    /* r4 still has the address of "snacks" in it */
+    
+    /* Add the values and store in mem location snacks */
     ADDS r5,r1,r3
     STR r5,[r4]
     
@@ -63,8 +66,8 @@ asmFunc:
     /* restore the caller's registers, as required by the 
      * ARM calling convention 
      */
+    mov r0, r5 /* return the value of snacks to the C code in r0 */
     pop {r4-r11,LR}
-
     mov pc, lr	 /* asmFunc return to caller */
    
 
